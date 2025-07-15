@@ -2,7 +2,7 @@ export const CONFIG = {
     // API Configuration
     API_URL: window.location.hostname === 'localhost' ? 'http://localhost:3000' : '',
     
-    // File Upload
+    // File Upload t
     MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
     ALLOWED_FILE_TYPES: [
         'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
