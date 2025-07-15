@@ -36,16 +36,29 @@ export class UIManager extends EventEmitter {
 
     async renderComponents() {
         // Render each component to its container
-        document.getElementById('main-nav').innerHTML = this.components.navigation.render();
-        document.getElementById('hero-section').innerHTML = this.components.hero.render();
-        document.getElementById('dashboard-section').innerHTML = this.components.dashboard.render();
-        document.getElementById('features-section').innerHTML = this.components.features.render();
-        document.getElementById('pricing-section').innerHTML = this.components.pricing.render();
-        document.getElementById('main-footer').innerHTML = this.components.footer.render();
+        const mainNav = document.getElementById('main-nav');
+        const heroSection = document.getElementById('hero-section');
+        const dashboardSection = document.getElementById('dashboard-section');
+        const featuresSection = document.getElementById('features-section');
+        const pricingSection = document.getElementById('pricing-section');
+        const mainFooter = document.getElementById('main-footer');
+        
+        if (mainNav) mainNav.innerHTML = this.components.navigation.render();
+        if (heroSection) heroSection.innerHTML = this.components.hero.render();
+        if (dashboardSection) dashboardSection.innerHTML = this.components.dashboard.render();
+        if (featuresSection) featuresSection.innerHTML = this.components.features.render();
+        if (pricingSection) pricingSection.innerHTML = this.components.pricing.render();
+        if (mainFooter) mainFooter.innerHTML = this.components.footer.render();
         
         // Initialize component behaviors
         Object.values(this.components).forEach(component => {
-            if (component.init) component.init();
+            if (component.init) {
+                try {
+                    component.init();
+                } catch (error) {
+                    console.error('Component init error:', error);
+                }
+            }
         });
     }
 
@@ -55,8 +68,12 @@ export class UIManager extends EventEmitter {
             this.emit('connectWallet');
         });
 
-        // File upload events
-        this.components.fileUpload.on('filesSelected', (files) => {
+        this.components.navigation.on('disconnectWallet', () => {
+            this.emit('disconnectWallet');
+        });
+
+        // Dashboard file upload events - FIXED: Listen to dashboard for file uploads
+        this.components.dashboard.on('filesSelected', (files) => {
             this.emit('uploadFiles', files);
         });
 
@@ -71,6 +88,11 @@ export class UIManager extends EventEmitter {
 
         this.components.dashboard.on('shareFile', (fileData) => {
             this.emit('shareFile', fileData);
+        });
+
+        // FileUpload component events (if any)
+        this.components.fileUpload.on('cancelUpload', () => {
+            this.emit('cancelUpload');
         });
     }
 
@@ -101,26 +123,50 @@ export class UIManager extends EventEmitter {
     }
 
     showToast(message, type = 'info') {
-        this.components.toast.show(message, type);
+        // Debug logging
+        console.log(`Toast: [${type}] ${message}`);
+        
+        // Make sure toast component exists and has the show method
+        if (this.components.toast && this.components.toast.show) {
+            this.components.toast.show(message, type);
+        } else {
+            console.error('Toast component not properly initialized');
+            // Fallback to alert for critical errors
+            if (type === 'error') {
+                alert(`Error: ${message}`);
+            }
+        }
     }
 
     showShareModal(shareUrl, fileData) {
-        this.components.modal.showShare(shareUrl, fileData);
+        if (this.components.modal && this.components.modal.showShare) {
+            this.components.modal.showShare(shareUrl, fileData);
+        } else {
+            console.error('Modal component not properly initialized');
+        }
     }
 
     showUploadProgress(fileName) {
-        this.components.fileUpload.showProgress(fileName);
+        if (this.components.fileUpload && this.components.fileUpload.showProgress) {
+            this.components.fileUpload.showProgress(fileName);
+        }
     }
 
     updateUploadProgress(progress) {
-        this.components.fileUpload.updateProgress(progress);
+        if (this.components.fileUpload && this.components.fileUpload.updateProgress) {
+            this.components.fileUpload.updateProgress(progress);
+        }
     }
 
     hideUploadProgress() {
-        this.components.fileUpload.hideProgress();
+        if (this.components.fileUpload && this.components.fileUpload.hideProgress) {
+            this.components.fileUpload.hideProgress();
+        }
     }
 
     clearDashboard() {
-        this.components.dashboard.clear();
+        if (this.components.dashboard && this.components.dashboard.clear) {
+            this.components.dashboard.clear();
+        }
     }
 }
