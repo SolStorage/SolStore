@@ -92,4 +92,16 @@ export class Toast {
         };
         return icons[type] || icons.info;
     }
+
+show(message, type = 'info', duration = CONFIG.TOAST_DURATION || 3000) {
+    console.log(`Showing toast: [${type}] ${message}`); // Debug line
+    
+    // Add to queue
+    this.queue.push({ message, type, duration });
+    
+    // Process queue if not already showing
+    if (!this.isShowing) {
+        this.processQueue();
+    }
+}
 }
