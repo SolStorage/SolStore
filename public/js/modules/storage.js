@@ -6,8 +6,15 @@ export class StorageManager {
     async uploadFile(file, metadata, onProgress) {
         const formData = new FormData();
         formData.append('file', file);
+        
+        // Make sure we're sending walletAddress, not just wallet
+        formData.append('walletAddress', metadata.wallet || metadata.walletAddress);
+        
+        // Add other metadata
         Object.keys(metadata).forEach(key => {
-            formData.append(key, metadata[key]);
+            if (key !== 'wallet' && key !== 'walletAddress') {
+                formData.append(key, metadata[key]);
+            }
         });
 
         return new Promise((resolve, reject) => {
@@ -27,6 +34,14 @@ export class StorageManager {
                         resolve(response);
                     } catch (error) {
                         reject(new Error('Invalid response from server'));
+                    }
+                } else if (xhr.status === 400) {
+                    // Add better error handling for 400
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        reject(new Error(errorResponse.error || 'Bad request'));
+                    } catch {
+                        reject(new Error('Missing file or wallet address'));
                     }
                 } else if (xhr.status === 413) {
                     reject(new Error('File too large. Maximum size is 100MB'));
