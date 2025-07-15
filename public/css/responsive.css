@@ -16,6 +16,10 @@
     h1 { font-size: var(--font-size-3xl); }
     h2 { font-size: var(--font-size-2xl); }
     
+    .hero h1 {
+        font-size: 36px;
+    }
+    
     /* Navigation */
     .nav-links {
         display: none;
