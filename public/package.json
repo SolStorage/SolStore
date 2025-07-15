@@ -1,8 +1,12 @@
-cat > package.json << 'EOF'
 {
   "name": "solstore",
   "version": "1.0.0",
   "description": "Decentralized storage on Solana",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod",
+    "clean": "rm -rf .vercel node_modules"
+  },
   "dependencies": {
     "@solana/web3.js": "^1.87.6",
     "formidable": "^3.5.1",
@@ -15,4 +19,3 @@ cat > package.json << 'EOF'
     "node": ">=18.0.0"
   }
 }
-EOF

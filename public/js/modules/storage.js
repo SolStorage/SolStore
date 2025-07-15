@@ -28,13 +28,19 @@ export class StorageManager {
                     } catch (error) {
                         reject(new Error('Invalid response from server'));
                     }
+                } else if (xhr.status === 413) {
+                    reject(new Error('File too large. Maximum size is 100MB'));
+                } else if (xhr.status === 429) {
+                    reject(new Error('Too many uploads. Please wait a moment'));
+                } else if (xhr.status === 500) {
+                    reject(new Error('Server error. The app is running in demo mode'));
                 } else {
                     reject(new Error(`Upload failed: ${xhr.statusText}`));
                 }
             });
 
             xhr.addEventListener('error', () => {
-                reject(new Error('Upload failed - network error'));
+                reject(new Error('Network error - check your connection'));
             });
 
             xhr.open('POST', `${this.config.API_URL}/api/upload`);
@@ -43,16 +49,46 @@ export class StorageManager {
     }
 
     async getUserFiles(walletAddress) {
-        const response = await fetch(`${this.config.API_URL}/api/files?wallet=${walletAddress}`);
-        if (!response.ok) throw new Error('Failed to load files');
-        const data = await response.json();
-        return data.files;
+        try {
+            const response = await fetch(`${this.config.API_URL}/api/files?wallet=${walletAddress}`);
+            if (!response.ok) {
+                if (response.status === 500) {
+                    console.log('Running in demo mode - no files stored yet');
+                    return [];
+                }
+                throw new Error('Failed to load files');
+            }
+            const data = await response.json();
+            return data.files || [];
+        } catch (error) {
+            console.error('Load files error:', error);
+            return []; // Return empty array instead of throwing
+        }
     }
 
     async getUserStats(walletAddress) {
-        const response = await fetch(`${this.config.API_URL}/api/stats?wallet=${walletAddress}`);
-        if (!response.ok) throw new Error('Failed to load stats');
-        return response.json();
+        try {
+            const response = await fetch(`${this.config.API_URL}/api/stats?wallet=${walletAddress}`);
+            if (!response.ok) {
+                // Return default stats if API fails
+                return {
+                    totalSize: 0,
+                    fileCount: 0,
+                    storageLimit: 1073741824,
+                    percentUsed: 0
+                };
+            }
+            return response.json();
+        } catch (error) {
+            console.error('Load stats error:', error);
+            // Return default stats
+            return {
+                totalSize: 0,
+                fileCount: 0,
+                storageLimit: 1073741824,
+                percentUsed: 0
+            };
+        }
     }
 
     async deleteFile(fileId, walletAddress) {
@@ -64,7 +100,12 @@ export class StorageManager {
             body: JSON.stringify({ fileId })
         });
         
-        if (!response.ok) throw new Error('Failed to delete file');
+        if (!response.ok) {
+            if (response.status === 500) {
+                throw new Error('Cannot delete in demo mode');
+            }
+            throw new Error('Failed to delete file');
+        }
         return response.json();
     }
 }

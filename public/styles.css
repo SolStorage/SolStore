@@ -1,0 +1,6 @@
+/* Import all CSS files in order */
+@import url('./css/variables.css');
+@import url('./css/base.css');
+@import url('./css/animations.css');
+@import url('./css/components.css');
+@import url('./css/responsive.css');
