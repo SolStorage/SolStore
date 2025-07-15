@@ -79,7 +79,8 @@ class SolStoreApp {
             const stats = await this.storage.getUserStats(this.wallet.publicKey);
             this.ui.updateStorageStats(stats);
         } catch (error) {
-            this.ui.showToast('Failed to load user data', 'error');
+            console.error('Load user data error:', error);
+            // Don't show error toast on initial load
         }
     }
 
@@ -91,19 +92,19 @@ class SolStoreApp {
                     throw new Error(`${file.name} is too large. Max size: ${this.config.MAX_FILE_SIZE / 1024 / 1024}MB`);
                 }
 
-                // Show encryption progress
-                this.ui.showToast('Encrypting file...', 'info');
+                // Show upload progress (no encryption)
+                this.ui.showToast('Uploading file...', 'info');
                 
-                // Encrypt file
-                const encryptedBlob = await this.encryption.encryptFile(file, this.wallet);
+                // Skip encryption - use original file
+                // const encryptedBlob = await this.encryption.encryptFile(file, this.wallet);
                 
-                // Upload file
+                // Upload file directly
                 this.ui.showUploadProgress(file.name);
-                const result = await this.storage.uploadFile(encryptedBlob, {
+                const result = await this.storage.uploadFile(file, {
                     originalName: file.name,
                     originalType: file.type,
-                    wallet: this.wallet.publicKey,
-                    encrypted: true
+                    walletAddress: this.wallet.publicKey,  // Fixed: using walletAddress
+                    encrypted: 'false'  // Fixed: string 'false' instead of boolean
                 }, (progress) => {
                     this.ui.updateUploadProgress(progress);
                 });
@@ -120,23 +121,26 @@ class SolStoreApp {
             } catch (error) {
                 this.ui.hideUploadProgress();
                 this.ui.showToast(error.message, 'error');
+                console.error('Upload error:', error);
             }
         }
     }
 
     async downloadFile(fileData) {
         try {
-            this.ui.showToast('Downloading and decrypting...', 'info');
+            this.ui.showToast('Downloading file...', 'info');
             
-            // Fetch file
+            // Fetch file directly (no decryption needed)
             const response = await fetch(fileData.url);
-            const encryptedBlob = await response.blob();
             
-            // Decrypt file
-            const decryptedBlob = await this.encryption.decryptFile(encryptedBlob, this.wallet);
+            if (!response.ok) {
+                throw new Error('Failed to fetch file');
+            }
             
-            // Download
-            const url = URL.createObjectURL(decryptedBlob);
+            const blob = await response.blob();
+            
+            // Download directly
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
             link.download = fileData.name;
@@ -146,7 +150,8 @@ class SolStoreApp {
             this.ui.showToast('File downloaded successfully!', 'success');
             
         } catch (error) {
-            this.ui.showToast('Failed to download file. Are you using the same wallet?', 'error');
+            console.error('Download error:', error);
+            this.ui.showToast('Failed to download file', 'error');
         }
     }
 
@@ -161,6 +166,7 @@ class SolStoreApp {
             this.ui.updateStorageStats(stats);
             
         } catch (error) {
+            console.error('Delete error:', error);
             this.ui.showToast('Failed to delete file', 'error');
         }
     }

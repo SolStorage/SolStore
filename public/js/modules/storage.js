@@ -17,6 +17,12 @@ export class StorageManager {
             }
         });
 
+        // Debug logging
+        console.log('Sending formData with:');
+        console.log('- walletAddress:', metadata.wallet || metadata.walletAddress);
+        console.log('- encrypted:', metadata.encrypted);
+        console.log('- originalName:', metadata.originalName);
+
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             
