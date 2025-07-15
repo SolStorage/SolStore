@@ -1,9 +1,6 @@
-const formidable = require('formidable');
+const { formidable } = require('formidable'); // FIX: Use destructuring
 const FormData = require('form-data');
 const { fileRegistry, checkRateLimit, sanitizeWallet } = require('../lib/registry');
-
-// Add fetch for Node.js
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const config = {
   api: {
@@ -116,7 +113,6 @@ async function handler(req, res) {
     }
     
     // Production mode with Pinata
-    const FormData = require('form-data');
     const formData = new FormData();
     formData.append('file', fileBuffer, file.originalFilename);
     
@@ -133,52 +129,59 @@ async function handler(req, res) {
     formData.append('pinataMetadata', metadata);
     
     // Upload to Pinata
-    const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.PINATA_JWT}`,
-        ...formData.getHeaders()
-      },
-      body: formData
-    });
-    
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Pinata error:', error);
-      throw new Error(`Pinata error: ${response.statusText}`);
+    try {
+      const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.PINATA_JWT}`,
+          ...formData.getHeaders()
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Pinata error details:', error);
+        console.error('Pinata status:', response.status);
+        throw new Error(`Pinata error: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Create file record
+      const fileData = {
+        id: Date.now().toString(),
+        name: file.originalFilename,
+        size: file.size,
+        type: fields.originalType ? fields.originalType[0] : file.mimetype,
+        ipfsHash: data.IpfsHash,
+        url: `https://gateway.pinata.cloud/ipfs/${data.IpfsHash}`,
+        owner: walletAddress,
+        uploadDate: new Date().toISOString(),
+        encrypted: fields.encrypted ? fields.encrypted[0] === 'true' : false
+      };
+      
+      // Store in registry
+      if (!fileRegistry.has(walletAddress)) {
+        fileRegistry.set(walletAddress, []);
+      }
+      fileRegistry.get(walletAddress).push(fileData);
+      
+      // Clean up temp file
+      await fs.promises.unlink(file.filepath);
+      
+      // Cache control for response
+      res.setHeader('Cache-Control', 'no-cache');
+      
+      res.status(200).json({ 
+        success: true, 
+        file: fileData 
+      });
+      
+    } catch (pinataError) {
+      console.error('Pinata upload error:', pinataError);
+      throw pinataError;
     }
-    
-    const data = await response.json();
-    
-    // Create file record
-    const fileData = {
-      id: Date.now().toString(),
-      name: file.originalFilename,
-      size: file.size,
-      type: fields.originalType ? fields.originalType[0] : file.mimetype,
-      ipfsHash: data.IpfsHash,
-      url: `https://gateway.pinata.cloud/ipfs/${data.IpfsHash}`,
-      owner: walletAddress,
-      uploadDate: new Date().toISOString(),
-      encrypted: fields.encrypted ? fields.encrypted[0] === 'true' : false
-    };
-    
-    // Store in registry
-    if (!fileRegistry.has(walletAddress)) {
-      fileRegistry.set(walletAddress, []);
-    }
-    fileRegistry.get(walletAddress).push(fileData);
-    
-    // Clean up temp file
-    await fs.promises.unlink(file.filepath);
-    
-    // Cache control for response
-    res.setHeader('Cache-Control', 'no-cache');
-    
-    res.status(200).json({ 
-      success: true, 
-      file: fileData 
-    });
     
   } catch (error) {
     console.error('Upload error:', error);
@@ -197,30 +200,6 @@ async function handler(req, res) {
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
-  // Upload to Pinata
-try {
-    const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${process.env.PINATA_JWT}`,
-            ...formData.getHeaders()
-        },
-        body: formData
-    });
-    
-    if (!response.ok) {
-        const error = await response.text();
-        console.error('Pinata error details:', error);
-        console.error('Pinata status:', response.status);
-        throw new Error(`Pinata error: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    // ... rest of code
-} catch (error) {
-    console.error('Upload error details:', error.message);
-    throw error;
-}
 }
 
 module.exports = handler;
