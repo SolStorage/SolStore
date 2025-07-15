@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolStore - Decentralized Storage on Solana</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #9945FF;
+            --secondary: #14F195;
+            --dark: #0a0a0a;
+            --dark-secondary: #1a1a1a;
+            --light: #ffffff;
+            --gray: #666666;
+            --success: #14F195;
+            --error: #ff4545;
+            --warning: #ffb545;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            opacity: 0.03;
+            background-image: 
+                repeating-linear-gradient(45deg, var(--primary) 0, var(--primary) 1px, transparent 1px, transparent 15px),
+                repeating-linear-gradient(-45deg, var(--secondary) 0, var(--secondary) 1px, transparent 1px, transparent 15px);
+            animation: drift 20s linear infinite;
+        }
+
+        @keyframes drift {
+            from { transform: translate(0, 0); }
+            to { transform: translate(30px, 30px); }
+        }
+
+        /* Gradient Orbs */
+        .gradient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: float 10s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--primary);
+            top: -200px;
+            left: -200px;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: var(--secondary);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: 5s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -30px) scale(1.1); }
+        }
+
+        /* Navigation */
+        nav {
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 20px 0;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--light);
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--light);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--secondary);
+        }
+
+        .connect-wallet {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--light);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .connect-wallet:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(153, 69, 255, 0.4);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 100px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: brightness(1); }
+            to { filter: brightness(1.2); }
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: var(--gray);
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--light);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(153, 69, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--light);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--secondary);
+        }
+
+        /* Storage Dashboard */
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 80px;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .storage-info {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .storage-stat {
+            background: var(--dark-secondary);
+            padding: 20px 30px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .storage-stat h3 {
+            font-size: 14px;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+
+        .storage-stat p {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--light);
+        }
+
+        .storage-stat .progress-bar {
+            width: 200px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* Upload Area */
+        .upload-section {
+            background: var(--dark-secondary);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 60px 40px;
+            text-align: center;
+            margin-bottom: 40px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-section.drag-over {
+            border-color: var(--secondary);
+            background: rgba(20, 241, 149, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .upload-section h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .upload-section p {
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--light);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(153, 69, 255, 0.4);
+        }
+
+        /* Files Grid */
+        .files-section {
+            margin-top: 40px;
+        }
+
+        .files-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+        }
+
+        .view-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--light);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .view-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--secondary);
+        }
+
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .file-card {
+            background: var(--dark-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--secondary);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .file-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .file-card:hover::before {
+            transform: translateX(0);
+        }
+
+        .file-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.8;
+        }
+
+        .file-name {
+            font-weight: 600;
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+
+        .file-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .file-action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--light);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .file-action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 20px;
+            background: rgba(26, 26, 26, 0.5);
+        }
+
+        .features-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: var(--dark-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--secondary);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .feature-card h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .feature-card p {
+            color: var(--gray);
+            line-height: 1.8;
+        }
+
+        /* Pricing Section */
+        .pricing {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing h2 {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 60px;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .pricing-card {
+            background: var(--dark-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card.featured {
+            border-color: var(--secondary);
+            transform: scale(1.05);
+        }
+
+        .pricing-card.featured::before {
+            content: 'POPULAR';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--light);
+            padding: 4px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .pricing-card.featured:hover {
+            transform: scale(1.05) translateY(-10px);
+        }
+
+        .plan-name {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .plan-price {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .plan-price span {
+            font-size: 18px;
+            color: var(--gray);
+        }
+
+        .plan-features {
+            list-style: none;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .plan-features li {
+            padding: 10px 0;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .plan-features li::before {
+            content: '✓';
+            color: var(--secondary);
+            font-weight: bold;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark-secondary);
+            padding: 60px 20px 30px;
+            margin-top: 100px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 20px;
+            color: var(--light);
+        }
+
+        .footer-section p,
+        .footer-section a {
+            color: var(--gray);
+            text-decoration: none;
+            line-height: 2;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section a:hover {
+            color: var(--secondary);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--gray);
+        }
+
+        /* Upload Progress */
+        .upload-progress {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--dark-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 300px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .upload-progress.active {
+            display: block;
+        }
+
+        .upload-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .upload-progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .upload-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .upload-progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 100px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            from { transform: translateX(-100px); }
+            to { transform: translateX(100px); }
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--dark-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--gray);
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--light);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .files-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .features-grid,
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+        }
+
+        /* Loading Animation */
+        .loader {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--secondary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .files-grid.list-view .file-card {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+        }
+
+        .files-grid.list-view .file-icon {
+            font-size: 32px;
+            margin-bottom: 0;
+            margin-right: 20px;
+        }
+
+        .files-grid.list-view .file-name {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .files-grid.list-view .file-info {
+            margin-bottom: 0;
+            margin-right: 20px;
+        }
+
+        .files-grid.list-view .file-actions {
+            margin-bottom: 0;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--dark-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-color: var(--success);
+        }
+
+        .toast.error {
+            border-color: var(--error);
+        }
+
+        .toast.warning {
+            border-color: var(--warning);
+        }
+
+        .toast.info {
+            border-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Elements -->
+    <div class="bg-pattern"></div>
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <div class="logo-icon">💾</div>
+                <span>SolStore</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#dashboard">Dashboard</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#docs">Docs</a></li>
+            </ul>
+            <button class="connect-wallet" onclick="connectWallet()">Connect Wallet</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Decentralized Storage</h1>
+        <p>Store your files securely on the Solana blockchain. Fast, reliable, and truly decentralized.</p>
+        <div class="hero-buttons">
+            <a href="#dashboard" class="btn btn-primary">
+                <span>Start Storing</span>
+                <span>→</span>
+            </a>
+            <a href="#features" class="btn btn-secondary">
+                <span>Learn More</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section class="dashboard" id="dashboard">
+        <div class="dashboard-header">
+            <h2>My Storage</h2>
+            <div class="storage-info">
+                <div class="storage-stat">
+                    <h3>Used Storage</h3>
+                    <p>0 Bytes</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="storage-stat">
+                    <h3>Total Files</h3>
+                    <p>0</p>
+                </div>
+                <div class="storage-stat">
+                    <h3>Storage Limit</h3>
+                    <p>1 GB</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="upload-section" id="uploadArea">
+            <div class="upload-icon">📤</div>
+            <h2>Upload Files</h2>
+            <p>Drag and drop files here or click to browse (Max: 100MB per file) - Stored on IPFS</p>
+            <input type="file" id="fileInput" class="file-input" multiple>
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Choose Files</button>
+        </div>
+
+        <!-- Files Section -->
+        <div class="files-section">
+            <div class="files-header">
+                <h2>Your Files</h2>
+                <div class="view-toggle">
+                    <button class="view-btn active" onclick="toggleView('grid', event)">Grid</button>
+                    <button class="view-btn" onclick="toggleView('list', event)">List</button>
+                </div>
+            </div>
+            
+            <div class="files-grid" id="filesGrid">
+                <!-- Files will be loaded here -->
+                <div style="grid-column: 1/-1; text-align: center; color: var(--gray); padding: 40px;">
+                    Connect your wallet to see your files
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="features-container">
+            <h2>Why Choose SolStore?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>End-to-End Encryption</h3>
+                    <p>Your files are encrypted before upload and only you have the keys. Complete privacy guaranteed.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Lightning Fast</h3>
+                    <p>Powered by Solana's high-speed blockchain. Upload and access files in milliseconds.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3>Globally Distributed</h3>
+                    <p>Files are replicated across multiple nodes worldwide for maximum availability.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💎</div>
+                    <h3>Permanent Storage</h3>
+                    <p>Once uploaded, your files are stored permanently on the blockchain. No deletion, no censorship.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Version Control</h3>
+                    <p>Track all changes and access previous versions of your files anytime.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤝</div>
+                    <h3>Easy Sharing</h3>
+                    <p>Share files securely with encrypted links. Control access with time limits and permissions.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing" id="pricing">
+        <h2>Simple, Transparent Pricing</h2>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <h3 class="plan-name">Basic</h3>
+                <div class="plan-price">Free</div>
+                <ul class="plan-features">
+                    <li>1 GB Storage</li>
+                    <li>Basic Encryption</li>
+                    <li>10 Files/Month</li>
+                    <li>Community Support</li>
+                </ul>
+                <button class="btn btn-secondary" style="width: 100%">Get Started</button>
+            </div>
+            
+            <div class="pricing-card featured">
+                <h3 class="plan-name">Pro</h3>
+                <div class="plan-price">$9.99<span>/month</span></div>
+                <ul class="plan-features">
+                    <li>100 GB Storage</li>
+                    <li>Advanced Encryption</li>
+                    <li>Unlimited Files</li>
+                    <li>Priority Support</li>
+                    <li>Version History</li>
+                    <li>Advanced Sharing</li>
+                </ul>
+                <button class="btn btn-primary" style="width: 100%">Choose Pro</button>
+            </div>
+            
+            <div class="pricing-card">
+                <h3 class="plan-name">Enterprise</h3>
+                <div class="plan-price">$49.99<span>/month</span></div>
+                <ul class="plan-features">
+                    <li>Unlimited Storage</li>
+                    <li>Military-Grade Encryption</li>
+                    <li>Unlimited Files</li>
+                    <li>24/7 Support</li>
+                    <li>Custom Integration</li>
+                    <li>Team Collaboration</li>
+                    <li>API Access</li>
+                </ul>
+                <button class="btn btn-secondary" style="width: 100%">Contact Sales</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>SolStore</h3>
+                <p>Decentralized storage solution built on Solana blockchain. Secure, fast, and reliable.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Product</h3>
+                <a href="#">Features</a><br>
+                <a href="#">Pricing</a><br>
+                <a href="#">Security</a><br>
+                <a href="#">Roadmap</a>
+            </div>
+            <div class="footer-section">
+                <h3>Resources</h3>
+                <a href="#">Documentation</a><br>
+                <a href="#">API Reference</a><br>
+                <a href="#">GitHub</a><br>
+                <a href="#">Support</a>
+            </div>
+            <div class="footer-section">
+                <h3>Community</h3>
+                <a href="#">Twitter</a><br>
+                <a href="#">Discord</a><br>
+                <a href="#">Telegram</a><br>
+                <a href="#">Blog</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 SolStore. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Upload Progress -->
+    <div class="upload-progress" id="uploadProgress">
+        <div class="upload-progress-header">
+            <span>Uploading files...</span>
+            <span id="uploadPercentage">0%</span>
+        </div>
+        <div class="upload-progress-bar">
+            <div class="upload-progress-fill" id="uploadProgressFill" style="width: 0%"></div>
+        </div>
+        <div id="uploadFileName" style="color: var(--gray); font-size: 14px;">Preparing...</div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal" id="shareModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Share File</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px;">Share this file with a secure link:</p>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <input type="text" id="shareLink" readonly style="flex: 1; padding: 12px; background: var(--dark); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--light);">
+                    <button class="btn btn-primary" onclick="copyShareLink()">Copy</button>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 10px;">Link expires in:</label>
+                    <select style="width: 100%; padding: 12px; background: var(--dark); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--light);">
+                        <option>Never</option>
+                        <option>1 hour</option>
+                        <option>24 hours</option>
+                        <option>7 days</option>
+                        <option>30 days</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span id="toastMessage">Message</span>
+    </div>
+
+    <script>
+        // Initialize
+        let walletConnected = false;
+        let uploadQueue = [];
+        let currentView = 'grid';
+
+        // Configuration
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000'  // Vercel dev server runs on 3000
+            : ''; // Empty for production (uses same domain)
+        let publicKey = null;
+        const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB - match your backend
+
+        // QuickNode RPC endpoint
+        const QUICKNODE_RPC = 'https://lively-black-telescope.solana-mainnet.quiknode.pro/84fc4dcebe15afcc2b02f1d0cdb4e9ec2db7920b/';
+
+        // Initialize Phantom check
+        let phantomCheckInterval;
+        let phantomCheckAttempts = 0;
+        const MAX_PHANTOM_CHECK_ATTEMPTS = 10;
+
+        // Function to check if Phantom is available
+        function checkPhantomAvailability() {
+            return new Promise((resolve) => {
+                // Check immediately
+                if (window.solana && window.solana.isPhantom) {
+                    console.log('Phantom detected immediately');
+                    resolve(true);
+                    return;
+                }
+
+                let attempts = 0;
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    
+                    if (window.solana && window.solana.isPhantom) {
+                        console.log(`Phantom detected after ${attempts} attempts`);
+                        clearInterval(checkInterval);
+                        resolve(true);
+                    } else if (attempts >= 20) { // 2 seconds total
+                        console.log('Phantom not detected after 2 seconds');
+                        clearInterval(checkInterval);
+                        resolve(false);
+                    }
+                }, 100); // Check every 100ms
+            });
+        }
+
+        // Encryption Functions
+        // Generate encryption key from wallet signature
+     async function generateEncryptionKey() {
+    if (!window.solana || !walletConnected) {
+        throw new Error('Wallet not connected');
+    }
+    
+    const message = new TextEncoder().encode('SolStore Encryption Key');
+    const signatureResult = await window.solana.signMessage(message);
+    
+    // Convert signature to Uint8Array and take first 32 bytes
+    const signature = new Uint8Array(signatureResult.signature);
+    return signature.slice(0, 32);
+}
+
+        // Encrypt file before upload
+        async function encryptFile(file) {
+            const key = await generateEncryptionKey();
+            const iv = crypto.getRandomValues(new Uint8Array(16));
+            
+            const fileBuffer = await file.arrayBuffer();
+            
+            const cryptoKey = await crypto.subtle.importKey(
+                'raw',
+                key,
+                'AES-GCM',
+                false,
+                ['encrypt']
+            );
+            
+            const encryptedData = await crypto.subtle.encrypt(
+                {
+                    name: 'AES-GCM',
+                    iv: iv
+                },
+                cryptoKey,
+                fileBuffer
+            );
+            
+            // Combine IV and encrypted data
+            const combined = new Uint8Array(iv.length + encryptedData.byteLength);
+            combined.set(iv);
+            combined.set(new Uint8Array(encryptedData), iv.length);
+            
+            return new Blob([combined], { type: 'application/octet-stream' });
+        }
+
+        // Decrypt file after download
+        async function decryptFile(encryptedBlob, originalName) {
+            const key = await generateEncryptionKey();
+            const encryptedBuffer = await encryptedBlob.arrayBuffer();
+            
+            // Extract IV and data
+            const iv = new Uint8Array(encryptedBuffer, 0, 16);
+            const data = new Uint8Array(encryptedBuffer, 16);
+            
+            const cryptoKey = await crypto.subtle.importKey(
+                'raw',
+                key,
+                'AES-GCM',
+                false,
+                ['decrypt']
+            );
+            
+            const decryptedData = await crypto.subtle.decrypt(
+                {
+                    name: 'AES-GCM',
+                    iv: iv
+                },
+                cryptoKey,
+                data
+            );
+            
+            return new Blob([decryptedData]);
+        }
+
+        // Drag and Drop
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // Upload file function with enhanced error handling and encryption
+        async function uploadFile(file) {
+            const uploadProgress = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('uploadProgressFill');
+            const percentage = document.getElementById('uploadPercentage');
+            const fileName = document.getElementById('uploadFileName');
+
+            try {
+                // Encrypt file first
+                showToast('Encrypting file...', 'info');
+                const encryptedBlob = await encryptFile(file);
+                const encryptedFile = new File([encryptedBlob], file.name, {
+                    type: 'application/octet-stream'
+                });
+
+                uploadProgress.classList.add('active');
+                fileName.textContent = file.name;
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('file', encryptedFile);
+                formData.append('walletAddress', publicKey || 'demo-user');
+                formData.append('originalType', file.type);
+                formData.append('encrypted', 'true');
+
+                // Create XMLHttpRequest for progress tracking
+                const xhr = new XMLHttpRequest();
+                
+                // Track upload progress
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressFill.style.width = percentComplete + '%';
+                        percentage.textContent = Math.round(percentComplete) + '%';
+                    }
+                });
+
+                // Handle successful upload
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            console.log('Upload successful:', response);
+                            
+                            // Hide progress bar
+                            setTimeout(() => {
+                                uploadProgress.classList.remove('active');
+                                progressFill.style.width = '0%';
+                                percentage.textContent = '0%';
+                            }, 500);
+                            
+                            // Add file to grid with backend data
+                            addUploadedFileToGrid(response.file);
+                            
+                            // Show success message
+                            showToast(`${file.name} uploaded successfully to IPFS!`, 'success');
+                            
+                            // Update storage info
+                            updateStorageInfo();
+                            
+                        } catch (error) {
+                            console.error('Error parsing response:', error);
+                            uploadProgress.classList.remove('active');
+                            showToast('Upload failed - invalid response', 'error');
+                        }
+                    } else if (xhr.status === 413) {
+                        uploadProgress.classList.remove('active');
+                        showToast(`File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB.`, 'error');
+                    } else if (xhr.status === 400) {
+                        try {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            uploadProgress.classList.remove('active');
+                            showToast(errorResponse.error || 'Upload failed', 'error');
+                        } catch {
+                            uploadProgress.classList.remove('active');
+                            showToast('Upload failed - bad request', 'error');
+                        }
+                    } else {
+                        uploadProgress.classList.remove('active');
+                        showToast('Upload failed - server error', 'error');
+                    }
+                });
+
+                // Handle errors
+                xhr.addEventListener('error', () => {
+                    uploadProgress.classList.remove('active');
+                    showToast('Upload failed - check if backend is running', 'error');
+                    console.error('Upload error - is your backend running on port 3000?');
+                });
+
+                // Handle timeout
+                xhr.addEventListener('timeout', () => {
+                    uploadProgress.classList.remove('active');
+                    showToast('Upload timed out - file may be too large or connection is slow', 'warning');
+                });
+
+                // Set timeout for large files (5 minutes)
+                xhr.timeout = 300000;
+
+                // Send the request
+                xhr.open('POST', `${API_URL}/api/upload`);
+                xhr.send(formData);
+            } catch (error) {
+                console.error('Encryption error:', error);
+                showToast('Failed to encrypt file', 'error');
+                uploadProgress.classList.remove('active');
+            }
+        }
+
+        // Add uploaded file to grid with backend data
+        function addUploadedFileToGrid(fileData) {
+            const filesGrid = document.getElementById('filesGrid');
+            
+            // Remove the "connect wallet" message if it exists
+            const emptyMessage = filesGrid.querySelector('div[style*="grid-column"]');
+            if (emptyMessage) {
+                emptyMessage.remove();
+            }
+
+            const fileCard = document.createElement('div');
+            fileCard.className = 'file-card';
+            fileCard.onclick = () => openFile(fileCard);
+
+            const fileIcon = getFileIcon(fileData.type);
+            const fileSize = formatFileSize(fileData.size);
+            const uploadTime = new Date(fileData.uploadDate).toLocaleDateString();
+            
+            fileCard.innerHTML = `
+                <div class="file-icon">${fileIcon}</div>
+                <div class="file-name">${fileData.name}</div>
+                <div class="file-info">
+                    <span>${fileSize}</span>
+                    <span>${uploadTime}</span>
+                </div>
+                <div class="file-actions">
+                    <button class="file-action-btn" onclick="downloadFileFromBackend(event, '${fileData.url}', '${fileData.name}', true)">Download</button>
+                    <button class="file-action-btn" onclick="shareFile(event, '${fileData.name}', '${fileData.url}')">Share</button>
+                    <button class="file-action-btn" onclick="deleteFileFromBackend(event, '${fileData.id}', '${fileData.name}')">Delete</button>
+                </div>
+            `;
+
+            filesGrid.insertBefore(fileCard, filesGrid.firstChild);
+        }
+
+        // Download file from backend with decryption support
+        async function downloadFileFromBackend(event, fileUrl, fileName, encrypted = true) {
+            event.stopPropagation();
+            
+            try {
+                showToast('Downloading and decrypting...', 'info');
+                
+                // IPFS URLs are already complete
+                const fullUrl = fileUrl;
+                const response = await fetch(fullUrl);
+                const encryptedBlob = await response.blob();
+                
+                if (encrypted) {
+                    // Decrypt the file
+                    const decryptedBlob = await decryptFile(encryptedBlob, fileName);
+                    
+                    // Create download link
+                    const url = URL.createObjectURL(decryptedBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    link.click();
+                    
+                    URL.revokeObjectURL(url);
+                    showToast('File decrypted and downloaded!', 'success');
+                } else {
+                    // Non-encrypted file
+                    const url = URL.createObjectURL(encryptedBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                }
+            } catch (error) {
+                console.error('Download/Decrypt error:', error);
+                showToast('Failed to decrypt file. Are you using the same wallet?', 'error');
+            }
+        }
+
+        // Delete file from backend
+        async function deleteFileFromBackend(event, fileId, fileName) {
+            event.stopPropagation();
+            
+            if (!confirm(`Are you sure you want to delete ${fileName}?`)) {
+                return;
+            }
+            
+            try {
+                const walletAddress = publicKey || 'demo-user';
+                const response = await fetch(`${API_URL}/api/files?wallet=${walletAddress}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ fileId })
+                });
+                
+                if (response.ok) {
+                    // Remove file card from UI
+                    event.target.closest('.file-card').remove();
+                    showToast(`${fileName} deleted successfully`, 'success');
+                    updateStorageInfo();
+                    
+                    // Check if grid is empty
+                    const filesGrid = document.getElementById('filesGrid');
+                    if (filesGrid.children.length === 0) {
+                        filesGrid.innerHTML = `
+                            <div style="grid-column: 1/-1; text-align: center; color: var(--gray); padding: 40px;">
+                                No files uploaded yet
+                            </div>
+                        `;
+                    }
+                } else {
+                    showToast('Failed to delete file', 'error');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('Failed to delete file', 'error');
+            }
+        }
+
+        // Load user files from backend
+        async function loadUserFiles() {
+            const walletAddress = publicKey || 'demo-user';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/files?wallet=${walletAddress}`);
+                const data = await response.json();
+                
+                const filesGrid = document.getElementById('filesGrid');
+                
+                // Clear existing files
+                filesGrid.innerHTML = '';
+                
+                if (data.files.length > 0) {
+                    // Add user's files
+                    data.files.reverse().forEach(file => {
+                        addUploadedFileToGrid(file);
+                    });
+                } else {
+                    filesGrid.innerHTML = `
+                        <div style="grid-column: 1/-1; text-align: center; color: var(--gray); padding: 40px;">
+                            No files uploaded yet
+                        </div>
+                    `;
+                }
+                
+                console.log(`Loaded ${data.files.length} files`);
+                
+            } catch (error) {
+                console.error('Failed to load files:', error);
+                showToast('Failed to load files', 'error');
+            }
+        }
+
+        // Update storage info from backend
+        async function updateStorageInfo() {
+            const walletAddress = publicKey || 'demo-user';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/stats?wallet=${walletAddress}`);
+                const stats = await response.json();
+                
+                // Update UI elements
+                document.querySelector('.storage-stat:nth-child(1) p').textContent = formatFileSize(stats.totalSize);
+                document.querySelector('.storage-stat:nth-child(2) p').textContent = stats.fileCount;
+                document.querySelector('.storage-stat:nth-child(3) p').textContent = formatFileSize(stats.storageLimit);
+                
+                // Update progress bar
+                const percentage = (stats.totalSize / stats.storageLimit) * 100;
+                document.querySelector('.progress-fill').style.width = percentage + '%';
+                
+                // Check if user is approaching storage limit
+                if (percentage > 90) {
+                    showToast('Warning: You are running low on storage space!', 'warning');
+                }
+                
+            } catch (error) {
+                console.error('Failed to update storage info:', error);
+            }
+        }
+
+        // Update handleFiles with file size validation
+        function handleFiles(files) {
+            if (!walletConnected || !publicKey) {
+                showToast('Please connect your Phantom wallet first!', 'error');
+                return;
+            }
+
+            let skippedFiles = 0;
+            let oversizedFiles = [];
+
+            for (let file of files) {
+                // Check file size before upload
+                if (file.size > MAX_FILE_SIZE) {
+                    skippedFiles++;
+                    oversizedFiles.push(file.name);
+                    continue;
+                }
+                uploadFile(file);
+            }
+
+            // Show warning for skipped files
+            if (skippedFiles > 0) {
+                const maxSizeMB = MAX_FILE_SIZE / 1024 / 1024;
+                if (skippedFiles === 1) {
+                    showToast(`File "${oversizedFiles[0]}" is too large. Maximum size is ${maxSizeMB}MB.`, 'error');
+                } else {
+                    showToast(`${skippedFiles} files were too large. Maximum size is ${maxSizeMB}MB per file.`, 'error');
+                }
+            }
+        }
+
+        // Phantom Wallet Integration with better error handling
+        async function connectWallet() {
+            const btn = document.querySelector('.connect-wallet');
+            
+            try {
+                // Wait a moment for Phantom to be fully loaded
+                const isPhantomAvailable = await checkPhantomAvailability();
+                
+                if (!isPhantomAvailable) {
+                    console.log('Phantom not available after waiting');
+                    showToast('Phantom wallet not detected! Please install it first.', 'error');
+                    if (confirm('Phantom wallet not found. Would you like to install it?')) {
+                        window.open('https://phantom.app/', '_blank');
+                    }
+                    return;
+                }
+                
+                const { solana } = window;
+                
+                if (!walletConnected) {
+                    console.log('Attempting to connect to Phantom...');
+                    
+                    // Connect to Phantom
+                    const response = await solana.connect();
+                    publicKey = response.publicKey.toString();
+                    walletConnected = true;
+                    
+                    console.log('Connected to wallet:', publicKey);
+                    
+                    // Update UI - show shortened address
+                    const shortAddress = publicKey.slice(0, 4) + '...' + publicKey.slice(-4);
+                    btn.textContent = shortAddress;
+                    
+                    showToast('Wallet connected successfully!', 'success');
+                    
+                    // Load user's files
+                    await loadUserFiles();
+                    await updateStorageInfo();
+                    
+                } else {
+                    // Disconnect
+                    await window.solana.disconnect();
+                    walletConnected = false;
+                    publicKey = null;
+                    btn.textContent = 'Connect Wallet';
+                    
+                    showToast('Wallet disconnected', 'success');
+                    
+                    // Clear files from view
+                    const filesGrid = document.getElementById('filesGrid');
+                    filesGrid.innerHTML = `
+                        <div style="grid-column: 1/-1; text-align: center; color: var(--gray); padding: 40px;">
+                            Connect your wallet to see your files
+                        </div>
+                    `;
+                    
+                    // Reset storage info
+                    document.querySelector('.storage-stat:nth-child(1) p').textContent = '0 Bytes';
+                    document.querySelector('.storage-stat:nth-child(2) p').textContent = '0';
+                    document.querySelector('.storage-stat:nth-child(3) p').textContent = '1 GB';
+                    document.querySelector('.progress-fill').style.width = '0%';
+                }
+            } catch (err) {
+                console.error('Wallet connection failed:', err);
+                if (err.message && err.message.includes('User rejected')) {
+                    showToast('Connection cancelled by user', 'error');
+                } else {
+                    showToast('Failed to connect wallet: ' + (err.message || 'Unknown error'), 'error');
+                }
+            }
+        }
+
+        // Remove the automatic demo mode connection
+        async function checkBackendConnection() {
+            try {
+                // For Vercel, we don't need to check backend separately
+                console.log('SolStore running on Vercel');
+            } catch (error) {
+                console.error('Connection error:', error);
+            }
+        }
+
+        // Setup Phantom event listeners
+        function setupPhantomListeners() {
+            if (window.solana && window.solana.isPhantom) {
+                console.log('Setting up Phantom event listeners');
+                
+                window.solana.on('connect', () => {
+                    console.log('Phantom connected event');
+                });
+                
+                window.solana.on('disconnect', () => {
+                    console.log('Phantom disconnected event');
+                    walletConnected = false;
+                    publicKey = null;
+                    
+                    const btn = document.querySelector('.connect-wallet');
+                    btn.textContent = 'Connect Wallet';
+                    
+                    // Clear files
+                    const filesGrid = document.getElementById('filesGrid');
+                    filesGrid.innerHTML = `
+                        <div style="grid-column: 1/-1; text-align: center; color: var(--gray); padding: 40px;">
+                            Connect your wallet to see your files
+                        </div>
+                    `;
+                });
+                
+                window.solana.on('accountChanged', (newPublicKey) => {
+                    if (newPublicKey) {
+                        console.log('Account changed to:', newPublicKey.toString());
+                        location.reload(); // Reload to load new account's files
+                    }
+                });
+            }
+        }
+
+        // Auto-connect if previously connected
+        window.addEventListener('load', async () => {
+            console.log('SolStore Frontend Loaded');
+            
+            // Check backend first
+            await checkBackendConnection();
+            
+            // Wait for Phantom to be available
+            const isPhantomAvailable = await checkPhantomAvailability();
+            
+            if (isPhantomAvailable) {
+                console.log('Phantom is available');
+                
+                // Setup event listeners
+                setupPhantomListeners();
+                
+                try {
+                    // Try to connect automatically if user previously connected
+                    const response = await window.solana.connect({ onlyIfTrusted: true });
+                    
+                    if (response && response.publicKey) {
+                        publicKey = response.publicKey.toString();
+                        walletConnected = true;
+                        
+                        console.log('Auto-connected to wallet:', publicKey);
+                        
+                        const btn = document.querySelector('.connect-wallet');
+                        const shortAddress = publicKey.slice(0, 4) + '...' + publicKey.slice(-4);
+                        btn.textContent = shortAddress;
+                        
+                        // Load user's files
+                        await loadUserFiles();
+                        await updateStorageInfo();
+                    }
+                } catch (err) {
+                    // User hasn't connected before, that's ok
+                    console.log('No previous connection found');
+                }
+            } else {
+                console.log('Phantom not available');
+            }
+        });
+
+        // Auto-refresh storage info every 30 seconds
+        setInterval(() => {
+            if (walletConnected) {
+                updateStorageInfo();
+            }
+        }, 30000);
+
+        // Helper Functions
+
+        // Get file icon based on type
+        function getFileIcon(fileType) {
+            if (!fileType) return '📎';
+            if (fileType.includes('image')) return '🖼️';
+            if (fileType.includes('video')) return '🎥';
+            if (fileType.includes('audio')) return '🎵';
+            if (fileType.includes('pdf')) return '📄';
+            if (fileType.includes('spreadsheet') || fileType.includes('excel')) return '📊';
+            if (fileType.includes('document') || fileType.includes('word')) return '📝';
+            if (fileType.includes('zip') || fileType.includes('rar')) return '📦';
+            return '📎';
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // File Actions
+        function openFile(element) {
+            // Implement file preview
+            console.log('Opening file...');
+        }
+
+        function downloadFile(event, fileName) {
+            event.stopPropagation();
+            showToast(`Downloading ${fileName}...`, 'success');
+            // This is for the example files only
+        }
+
+        function shareFile(event, fileName, fileUrl) {
+            event.stopPropagation();
+            const modal = document.getElementById('shareModal');
+            const shareLink = document.getElementById('shareLink');
+            
+            // Generate shareable URL
+            const fullUrl = fileUrl.startsWith('http') ? fileUrl : `${window.location.origin}${fileUrl}`;
+            
+            // Create a shareable link with encoded parameters
+            const shareableLink = `${window.location.origin}/share?file=${encodeURIComponent(fileName)}&url=${encodeURIComponent(fullUrl)}`;
+            
+            shareLink.value = shareableLink;
+            modal.classList.add('active');
+            
+            // Store current share data for expiry functionality
+            window.currentShareData = {
+                fileName: fileName,
+                fileUrl: fullUrl
+            };
+        }
+
+        async function copyShareLink() {
+            const shareLink = document.getElementById('shareLink');
+            
+            try {
+                // Try modern clipboard API first
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(shareLink.value);
+                } else {
+                    // Fallback for older browsers
+                    shareLink.select();
+                    document.execCommand('copy');
+                }
+                
+                showToast('Link copied to clipboard!', 'success');
+                
+                // Visual feedback
+                const copyBtn = event.target;
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                showToast('Failed to copy link', 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('shareModal').classList.remove('active');
+        }
+
+        // View Toggle
+        function toggleView(view, event) {
+            currentView = view;
+            const buttons = document.querySelectorAll('.view-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Handle event properly
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // Fallback: find button by view type
+                buttons.forEach(btn => {
+                    if ((view === 'grid' && btn.textContent === 'Grid') ||
+                        (view === 'list' && btn.textContent === 'List')) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+            
+            // Implement view change logic
+            const filesGrid = document.getElementById('filesGrid');
+            if (view === 'list') {
+                filesGrid.style.gridTemplateColumns = '1fr';
+                filesGrid.classList.add('list-view');
+            } else {
+                filesGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+                filesGrid.classList.remove('list-view');
+            }
+        }
+
+        // Toast Notifications
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toast.className = `toast show ${type}`;
+            toastMessage.textContent = message;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Smooth Scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // Debug helper
+        window.debug = {
+            checkPhantom: () => {
+                console.log('Phantom available:', !!window.solana?.isPhantom);
+                console.log('Wallet connected:', walletConnected);
+                console.log('Public key:', publicKey);
+                console.log('API URL:', API_URL);
+                console.log('Max file size:', formatFileSize(MAX_FILE_SIZE));
+                console.log('QuickNode RPC:', QUICKNODE_RPC);
+            },
+            testUpload: async () => {
+                if (!walletConnected) {
+                    console.error('Please connect wallet first');
+                    return;
+                }
+                
+                // Create a test file
+                const content = 'Test file content ' + new Date().toISOString();
+                const blob = new Blob([content], { type: 'text/plain' });
+                const file = new File([blob], 'test-' + Date.now() + '.txt', { type: 'text/plain' });
+                
+                console.log('Uploading test file...');
+                uploadFile(file);
+            },
+            listFiles: async () => {
+                const address = publicKey || 'demo-user';
+                const response = await fetch(`${API_URL}/api/files?wallet=${address}`);
+                const data = await response.json();
+                console.table(data.files);
+            },
+            testLargeFile: () => {
+                // Create a file larger than limit
+                const size = MAX_FILE_SIZE + 1024; // 1KB over limit
+                const content = new Uint8Array(size);
+                const blob = new Blob([content], { type: 'application/octet-stream' });
+                const file = new File([blob], 'large-test-file.bin', { type: 'application/octet-stream' });
+                
+                console.log('Testing with oversized file:', formatFileSize(file.size));
+                handleFiles([file]);
+            }
+        };
+        
+        console.log('Debug mode enabled. Use window.debug.checkPhantom() to check status');
+    </script>
+</body>
+</html>
