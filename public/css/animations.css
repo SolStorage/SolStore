@@ -1,0 +1,146 @@
+/* Background Animations */
+@keyframes drift {
+    from { transform: translate(0, 0); }
+    to { transform: translate(30px, 30px); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -30px) scale(1.1); }
+}
+
+@keyframes glow {
+    from { filter: brightness(1); }
+    to { filter: brightness(1.2); }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes shimmer {
+    from { transform: translateX(-100px); }
+    to { transform: translateX(100px); }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Background Pattern */
+.bg-pattern {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-background);
+    opacity: 0.03;
+    background-image: 
+        repeating-linear-gradient(45deg, var(--primary) 0, var(--primary) 1px, transparent 1px, transparent 15px),
+        repeating-linear-gradient(-45deg, var(--secondary) 0, var(--secondary) 1px, transparent 1px, transparent 15px);
+    animation: drift 20s linear infinite;
+}
+
+/* Gradient Orbs */
+.gradient-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.5;
+    animation: float 10s ease-in-out infinite;
+    z-index: var(--z-background);
+}
+
+.orb-1 {
+    width: 400px;
+    height: 400px;
+    background: var(--primary);
+    top: -200px;
+    left: -200px;
+}
+
+.orb-2 {
+    width: 300px;
+    height: 300px;
+    background: var(--secondary);
+    bottom: -150px;
+    right: -150px;
+    animation-delay: 5s;
+}
+
+/* Loading Spinner */
+.loader {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--secondary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+/* Shimmer Effect */
+.shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+/* Fade In Animation */
+.fade-in {
+    animation: fadeIn 0.6s ease-in;
+}
+
+/* List View Animations */
+.files-grid.list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.files-grid.list-view .file-card {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+}
+
+.files-grid.list-view .file-icon {
+    font-size: 32px;
+    margin-bottom: 0;
+    margin-right: 20px;
+}
+
+.files-grid.list-view .file-name {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.files-grid.list-view .file-info {
+    margin-bottom: 0;
+    margin-right: 20px;
+}
+
+.files-grid.list-view .file-actions {
+    margin-bottom: 0;
+}
